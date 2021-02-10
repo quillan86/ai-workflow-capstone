@@ -1,7 +1,8 @@
 import os
 from .model import ModelContainer
 
-datadir = os.path.abspath(os.path.join("data"))
+pipelinepath: str = os.path.dirname(os.path.abspath(__file__))
+datadir = os.path.abspath(os.path.join(pipelinepath, '..', 'data'))
 
 
 def train() -> ModelContainer:
@@ -21,4 +22,5 @@ def load(filename: str) -> ModelContainer:
 
 
 if __name__ == "__main__":
+    print(datadir)
     load("initial_model")

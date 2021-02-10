@@ -13,7 +13,7 @@ from .features import FeatureEngineer
 
 
 class Model:
-    def __init__(self, datadir: str, country: str, log: bool = False, seed: int = 42):
+    def __init__(self, datadir: str, country: Optional[str] = None, log: bool = False, seed: int = 42):
         """
         A single model per country.
         """
@@ -98,9 +98,9 @@ class Model:
         cv_score_std = cv_score.std()
         return cv_score_mean, cv_score_std
 
-    def save_object(self) -> Dict[str, Optional[str, int, RandomForestRegressor, RandomizedSearchCV]]:
+    def save_object(self) -> Dict[str, Union[str, int, RandomForestRegressor, RandomizedSearchCV, None]]:
         # put in an object to be read by dictionary
-        save_container: Dict[str, Optional[str, int, RandomForestRegressor, RandomizedSearchCV]] = {}
+        save_container: Dict[str, Union[str, int, RandomForestRegressor, RandomizedSearchCV, None]] = {}
         save_container['datadir'] = self.datadir
         save_container['country'] = self.country
         save_container['log'] = self.log
@@ -132,12 +132,12 @@ class ModelContainer:
         self.train_datadir = os.path.join(self.datadir, "cs-train")
         self.prod_datadir = os.path.join(self.datadir, "cs-production")
         self.ts_datadir = os.path.join(self.datadir, "ts-data")
-        self.model_datadir = os.path.abspath(os.path.join("models"))
+        self.model_datadir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'models'))
         self.log: bool = log
         self.seed: int = seed
         self.models: Dict[str, Model] = {}
 
-    def _get_top_countries(self, N: int = 15) -> List[str]:
+    def _get_top_countries(self, N: int = 15) -> List[Optional[str]]:
         def get_file(file, country):
             df = pd.read_csv(file)
             df['country'] = country
@@ -153,7 +153,7 @@ class ModelContainer:
         table: pd.DataFrame = pd.pivot_table(df, index='country', values="revenue", aggfunc='sum')
         table.columns = ['total_revenue']
         table.sort_values(by='total_revenue', inplace=True, ascending=False)
-        top_countries: List[str] = np.array(list(table.index))[:N].tolist()
+        top_countries: List[Optional[str]] = np.array(list(table.index))[:N].tolist()
         return top_countries
 
     def train(self, filename) -> Dict[str, Model]:
@@ -163,7 +163,7 @@ class ModelContainer:
         # absolute path of filename
         filename = os.path.join(self.model_datadir, filename)
         # get top countries to iterate over
-        top_countries: List[str] = self._get_top_countries()
+        top_countries: List[Optional[str]] = self._get_top_countries()
 
         # delete shelf if it already exists
         if os.path.exists(filename):
@@ -171,19 +171,24 @@ class ModelContainer:
 
         self.models = {}
         with shelve.open(filename) as db:
-            for country in top_countries:
+            # iterate overall countries plus all ("None" here)
+            for country in [None] + top_countries:
                 # create model
                 model = Model(self.datadir, country, log=self.log, seed=self.seed)
                 # train model
                 print(f"*** TRAINING {country} ***")
                 X_train, y_train, dates_train = model.load_train_data()
                 model.fit(X_train, y_train)
-                # save model
-                save_container: Dict[str, Optional[str, int, RandomForestRegressor, RandomizedSearchCV]] = model.save_object()
-                db[country] = save_container
-                self.models[country] = model
+                # save model - special one for none
+                if country is None:
+                    key: Optional[str] = 'all'
+                else:
+                    key: Optional[str] = country
+                save_container: Dict[str, Union[str, int, RandomForestRegressor, RandomizedSearchCV, None]] = model.save_object()
+                db[key] = save_container
+                self.models[key] = model
                 del X_train, y_train, dates_train
-                print(f"*** SAVED {country} ***")
+                print(f"*** SAVED {key} ***")
         return self.models
 
     def load(self, filename: str) -> Dict[str, Model]:
@@ -191,6 +196,7 @@ class ModelContainer:
         Load models into memory.
         """
         # absolute path of filename
+        print(self.model_datadir)
         filename = os.path.join(self.model_datadir, filename)
         with shelve.open(filename) as db:
             keylist: List[str] = [f.split('.')[0] for f in os.listdir(self.ts_datadir) if

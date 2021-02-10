@@ -66,8 +66,26 @@ class Extractor:
 
 
 class TransformLoader:
-    def __init__(self, country: Optional[str] = None):
-        self.country: Optional[str] = country
+    def __init__(self, country: Optional[str] = None, revise_type: bool = True, train_only: bool = False):
+        # make country capitalized if it's lowercase if it is not None (all countries)
+        if country is None:
+            self.country: Optional[str] = None
+        elif country.lower() == 'eire':
+            self.country: Optional[str] = country.upper()
+        else:
+            self.country: Optional[str] = country.title()
+        self.revise_type: bool = revise_type
+        self.train_only: bool = train_only
+
+    @staticmethod
+    def revise_ts(df_time: pd.DataFrame) -> pd.DataFrame:
+        """
+        Add type of data - train or production data. Training data is until 8/1/2019
+        """
+        df_time['type'] = ''
+        df_time.loc[(((df_time['year'] == 2019) & (df_time['month'] >= 8)) | (df_time['year'] > 2019)), 'type'] = 'prod'
+        df_time.loc[(df_time['type'] != 'prod'), 'type'] = 'train'
+        return df_time
 
     def run(self, df_orig: pd.DataFrame) -> pd.DataFrame:
         """
@@ -77,11 +95,12 @@ class TransformLoader:
         """
 
         if self.country:
-            if self.country not in np.unique(df_orig['country'].values):
+            if self.country.lower() not in np.unique(df_orig['country'].str.lower().values):
                 raise Exception("country not found")
             mask: pd.Series = df_orig['country'] == self.country
             df: pd.DataFrame = df_orig[mask]
         else:
+            # all data - hopefully this should work for all countries
             df: pd.DataFrame = df_orig
 
         ## use a date range to ensure all days are accounted for in the data
@@ -109,4 +128,10 @@ class TransformLoader:
         df_time['month'] = df_time['year_month'].str.split('-').apply(lambda x: x[1]).astype(int)
         df_time['year'] =  df_time['year_month'].str.split('-').apply(lambda x: x[0]).astype(int)
 
+        if self.revise_type:
+            df_time = TransformLoader.revise_ts(df_time)
+            if self.train_only:
+                df_time = df_time[df_time['type'] == 'train']
+
         return df_time
+

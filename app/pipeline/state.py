@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import List, Dict, Any, Tuple, Union, Optional
+from typing import List, Optional
 import numpy as np
 import pandas as pd
 
@@ -17,17 +17,7 @@ class State:
         self.train_fetcher = Extractor(self.train_datadir)
         self.prod_fetcher = Extractor(self.prod_datadir)
 
-    @staticmethod
-    def revise_ts(df_time: pd.DataFrame) -> pd.DataFrame:
-        """
-        Add type of data - train or production data. Training data is until 8/1/2019
-        """
-        df_time['type'] = ''
-        df_time.loc[(((df_time['year'] == 2019) & (df_time['month'] >= 8)) | (df_time['year'] > 2019)), 'type'] = 'prod'
-        df_time.loc[(df_time['type'] != 'prod'), 'type'] = 'train'
-        return df_time
-
-    def save(self) -> pd.DataFrame:
+    def save(self, train_only: bool = False) -> pd.DataFrame:
 
         ts_datadir: str = os.path.join(self.datadir, 'ts-data')
 
@@ -49,12 +39,14 @@ class State:
         table.columns = ['total_revenue']
         table.sort_values(by='total_revenue' ,inplace=True ,ascending=False)
         top_countries =  np.array(list(table.index))[:N].tolist()
-
-        for country in top_countries:
-            transform_loader: TransformLoader = TransformLoader(country=country)
+        # iterative over top N countries
+        for country in top_countries + [None]:
+            transform_loader: TransformLoader = TransformLoader(country=country, revise_type=True, train_only=train_only)
             df_time = transform_loader.run(df)
-            df_time = self.revise_ts(df_time)
-            ts_filename = os.path.join(ts_datadir, f"{country.lower()}.csv")
+            if country is not None:
+                ts_filename = os.path.join(ts_datadir, f"{country.lower()}.csv")
+            else:
+                ts_filename = os.path.join(ts_datadir, f"all_countries.csv")
             df_time.to_csv(ts_filename, index=False)
 
         return df
@@ -63,6 +55,10 @@ class State:
         """
         datatypes: all, train, or prod in string format
         """
+        # avoided the workaround that this is a string.
+        if country is not None:
+            if country.lower() == 'all_countries':
+                country = None
 
         if country:
             c = country.lower()
@@ -70,11 +66,16 @@ class State:
             countries_in_dir: List[str] = [c.split('.')[0] for c in onlyfiles]
             if c not in countries_in_dir:
                 raise Exception("country not found")
+            all_countries: bool = False
         else:
-            raise Exception("You must select a country.")
+            # all countries if None
+            all_countries: bool = True
 
-        filename: str = os.path.join(self.ts_datadir, f'{c}.csv')
-        df_ts: pd.DataFrame = pd.read_csv(filename)
+        if all_countries:
+            filename: str = os.path.join(self.ts_datadir, 'all_countries.csv')
+        else:
+            filename: str = os.path.join(self.ts_datadir, f'{c}.csv')
+        df_ts: pd.DataFrame = pd.read_csv(filename, parse_dates=['date'])
         if datatype.lower() == 'train':
             df_ts = df_ts[df_ts['type'] == 'train']
         elif datatype.lower() == 'prod':
@@ -90,3 +91,7 @@ class State:
         if droptype:
             df_ts = df_ts.drop(columns=['type'])
         return df_ts
+
+    def _add_country(self, filename: str, country: str):
+        df = pd.read_csv(filename)
+        df[country] = country
