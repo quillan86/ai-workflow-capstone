@@ -27,13 +27,17 @@ class Model:
         self.reg: Optional[RandomizedSearchCV] = None # model inside random CV
         self.estimator: Optional[RandomForestRegressor] = None # the optimized model itself
 
+    def load_data(self, datatype: str ='all'):
+        dfi = self.state.load(country=self.country, datatype ='all', droptype=False)
+        feature_engineer: FeatureEngineer = FeatureEngineer(datatype=datatype, log=self.log)
+        X, y, dates = feature_engineer.run(dfi)
+        return X, y, dates
+
     def load_train_data(self) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
         """
         Load training data.
         """
-        dfi = self.state.load(country=self.country, datatype ='all', droptype=False)
-        feature_engineer: FeatureEngineer = FeatureEngineer(datatype='train', log=self.log)
-        X_train, y_train, dates_train = feature_engineer.run(dfi)
+        X_train, y_train, dates_train = self.load_data('train')
         return X_train, y_train, dates_train
 
     def fit(self, X_train: Union[pd.DataFrame, np.ndarray], y_train: np.ndarray) -> None:
@@ -78,13 +82,17 @@ class Model:
         return
 
     def date_to_features(self, date: str):
-        dfi = self.state.load(country=self.country, datatype ='all', droptype=False)
-        feature_engineer: FeatureEngineer = FeatureEngineer(datatype='prod', log=self.log)
-        X_prod, y_prod, dates_prod = feature_engineer.run(dfi)
+        X_prod, y_prod, dates_prod = self.load_data('all')
         date = pd.to_datetime(date)
         X_data = X_prod.loc[dates_prod == date, :]
         return X_data
 
+    def date_range_to_features(self, initial_date: str, final_date: str):
+        X_prod, y_prod, dates_prod = self.load_data('all')
+        initial_date = pd.to_datetime(initial_date)
+        final_date = pd.to_datetime(final_date)
+        X_data = X_prod.loc[(dates_prod >= initial_date) & (dates_prod <= final_date), :]
+        return X_data
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
         """
@@ -233,8 +241,14 @@ class ModelContainer:
             scores[country] = rmse
         return scores
 
-    def predict(self, country: Optional[str], date: str):
+    def predict_date(self, country: Optional[str], date: str) -> np.ndarray:
         model: Model = self.models[country]
         X = model.date_to_features(date)
+        r_pred = model.predict(X)
+        return r_pred
+
+    def predict_range(self, country: Optional[str], initial_date: str, final_date: str) -> np.ndarray:
+        model: Model = self.models[country]
+        X = model.date_range_to_features(initial_date, final_date)
         r_pred = model.predict(X)
         return r_pred

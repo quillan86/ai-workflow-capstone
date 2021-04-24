@@ -158,7 +158,7 @@ def fetch_ts(data_dir, clean=False):
 def engineer_features(df,training=True):
     """
     for any given day the target becomes the sum of the next days revenue
-    for that day we engineer several features that help predict the summed revenue
+    for that day we engineer several features that help predict_date the summed revenue
     
     the 'training' flag will trim data that should not be used for training
     when set to false all data will be returned

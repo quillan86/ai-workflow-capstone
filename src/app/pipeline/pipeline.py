@@ -20,9 +20,14 @@ def load(filename: str, log: bool = False) -> ModelContainer:
     model_container.load(filename)
     return model_container
 
-def predict(filename: str, country: Optional[str], date: str) -> np.ndarray:
+def predict_date(filename: str, country: Optional[str], date: str) -> np.ndarray:
     model_container = load(filename)
-    y_pred = model_container.predict(country, date)
+    y_pred = model_container.predict_date(country, date)
+    return y_pred
+
+def predict_range(filename: str, country: Optional[str], initial_date: str, final_date: str) -> np.ndarray:
+    model_container = load(filename)
+    y_pred = model_container.predict_range(country, initial_date, final_date)
     return y_pred
 
 

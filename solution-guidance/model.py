@@ -140,7 +140,7 @@ def model_load(prefix='sl',data_dir=None,training=True):
 
 def model_predict(country,year,month,day,all_models=None,test=False):
     """
-    example funtion to predict from model
+    example funtion to predict_date from model
     """
 
     ## start timer for runtime
@@ -178,7 +178,7 @@ def model_predict(country,year,month,day,all_models=None,test=False):
         raise Exception("ERROR (model_predict) - dimensions mismatch")
 
     ## make prediction and gather data for log entry
-    y_pred = model.predict(query)
+    y_pred = model.predict_date(query)
     y_proba = None
     if 'predict_proba' in dir(model) and 'probability' in dir(model):
         if model.probability == True:
@@ -189,7 +189,7 @@ def model_predict(country,year,month,day,all_models=None,test=False):
     h, m = divmod(m, 60)
     runtime = "%03d:%02d:%02d"%(h, m, s)
 
-    ## update predict log
+    ## update predict_date log
     update_predict_log(country,y_pred,y_proba,target_date,
                        runtime, MODEL_VERSION, test=test)
     
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     all_data, all_models = model_load()
     print("... models loaded: ",",".join(all_models.keys()))
 
-    ## test predict
+    ## test predict_date
     country='all'
     year='2018'
     month='01'

@@ -68,7 +68,7 @@ and other relevant factors.
 We have used TensorFlow, scikit-learn, and Spark ML as the main ways to implement models.  Time-series analysis 
 has been around a long time and there are a number of specialized packages and software to help facilitate model 
 implementation.  In the case of our business opportunity, it is required that we 
-*predict the next point* or determine a reasonable value for next month's revenue.  If we only had revenue, we could 
+*predict_date the next point* or determine a reasonable value for next month's revenue.  If we only had revenue, we could 
 engineer features with revenue for the previous day, previous week, previous month and previous three months, for example.
 This provides features that machine learning models such as random forests or boosting could use to 
 capture the underlying patterns or trends in the the data. You will likely spend some time optimizing this feature
@@ -118,7 +118,7 @@ Also, be aware that the assumptions of line regression are generally invalidated
 
 ## Outline
 
-1. Build a draft version of an API with train, predict, and logfile endpoints.
+1. Build a draft version of an API with train, predict_date, and logfile endpoints.
 2. Using Docker, bundle your API, model, and unit tests.
 3. Using test-driven development iterate on your API in a way that anticipates scale, load, and drift.
 4. Create a post-production analysis script that investigates the relationship between model performance and the business metric.
@@ -133,7 +133,7 @@ At a higher level you are being asked to:
 
 
 To **ready your model for deployment** you will be required to prepare you model in a way that the Flask API can both 
-train and predict.  There are some differences when you compare this model to most of those we have discussed 
+train and predict_date.  There are some differences when you compare this model to most of those we have discussed 
 throughout this specialization.  When it comes to training one solution is that the model train script simply uses all
 files in a given directory.  This way you could set your model up to be re-trained at regular intervals with little 
 overhead.  
@@ -141,12 +141,12 @@ overhead.
 Prediction in the case of this model requires a little more thought.  You are not simply passing a query corresponding
 to a row in a feature matrix, because this business opportunity requires that the API takes a country name and a date.
 There are many ways to accommodate these requirements.  You model may simply save the forecasts for a range of dates,
-then the 'predict' function serves to looks up the specified 30 day revenue prediction.  You model could also transform
+then the 'predict_date' function serves to looks up the specified 30 day revenue prediction.  You model could also transform
 the target date into an appropriate input vector that is then used as input for a trained model.
 
-You might be tempted to setup the predict function to work only with the latest date, which would be appropriate in 
+You might be tempted to setup the predict_date function to work only with the latest date, which would be appropriate in 
 some circumstances, but in this case we are building a tool to fit the specific needs of individuals.  Some people in
-leadership at AAVAIL make projections at the end of the month and others do this on the 15th so the predict function
+leadership at AAVAIL make projections at the end of the month and others do this on the 15th so the predict_date function
 needs to work for all of the end users.
 
 In the case of this project you can safely assume that there are only a few individuals that will be active users of 

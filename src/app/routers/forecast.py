@@ -1,11 +1,11 @@
 import pandas as pd
 from typing import List, Optional, Dict
 
-from ..schemas import ForecastOutput
+from ..schemas import ForecastDateOutput, ForecastRangeOutput
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..pipeline.pipeline import train, load, predict
+from ..pipeline.pipeline import train, load, predict_date, predict_range
 
 router = APIRouter(prefix="/model",
                    responses={404: {"description": "Not found"}}
@@ -29,14 +29,22 @@ async def score(name: str):
     scores: Dict[str, float] = model_container.score()
     return scores
 
-@router.get("/forecast/", tags=["v1"], response_model=ForecastOutput)
-async def forecast(name: str, country: Optional[str], date: str):
+@router.get("/forecast_date/", tags=["v1"], response_model=ForecastDateOutput)
+async def forecast_date(name: str, country: Optional[str], date: str):
     name = '.'.join(name.split('.')[:-1] if len(name.split('.')) > 1 else name.split('.')) + '.db'
-    print(name)
-    y_pred = predict(name, country, date)
+    y_pred = predict_date(name, country, date)
     revenue = float(y_pred[0])
     forecasted_date = pd.to_datetime(date) + pd.DateOffset(days=30)
     initial_date: str = pd.to_datetime(date).strftime('%Y-%m-%d')
     forecasted_date: str = forecasted_date.strftime('%Y-%m-%d')
     return {"country": country, "initial_date": initial_date, "forecasted_date": forecasted_date, "forecasted_revenue": revenue}
+
+@router.get("/forecast_range/", tags=["v1"], response_model=ForecastRangeOutput)
+async def forecast_range(name: str, country: Optional[str], initial_date: str, final_date: str):
+    name = '.'.join(name.split('.')[:-1] if len(name.split('.')) > 1 else name.split('.')) + '.db'
+    y_pred = predict_range(name, country, initial_date, final_date)
+    initial_dates = pd.date_range(initial_date, final_date).astype(str).tolist()
+    final_dates = pd.date_range(pd.to_datetime(initial_date) + pd.DateOffset(days=30), pd.to_datetime(final_date) + pd.DateOffset(days=30)).astype(str).tolist()
+    revenue = [float(y) for y in y_pred]
+    return {"country": country, "initial_dates": initial_dates, 'forecasted_dates': final_dates, 'forecasted_revenue': revenue}
 

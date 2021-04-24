@@ -9,8 +9,15 @@ class PredictionParameters(BaseModel):
     pass
 
 
-class ForecastOutput(BaseModel):
+class ForecastDateOutput(BaseModel):
     country: Optional[str]
     initial_date: str
     forecasted_date: str
     forecasted_revenue: float
+
+
+class ForecastRangeOutput(BaseModel):
+    country: Optional[str]
+    initial_dates: List[str]
+    forecasted_dates: List[str]
+    forecasted_revenue: List[float]
