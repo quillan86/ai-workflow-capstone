@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-#from .routers import
+from .routers import forecast
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -34,5 +34,5 @@ app.add_middleware(
 # -----------------------------------------------------------------------------
 # ADD ROUTERS
 # -----------------------------------------------------------------------------
-# app.include_router(outlier.router, prefix="/api/v1")
+app.include_router(forecast.router, prefix="/api/v1")
 

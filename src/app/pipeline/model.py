@@ -5,7 +5,7 @@ from typing import Optional, Union, List, Tuple, Dict
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import RandomizedSearchCV, cross_val_score
+from sklearn.model_selection import RandomizedSearchCV, cross_val_score, KFold
 from sklearn.metrics import mean_squared_error, make_scorer
 
 from .state import State
@@ -65,7 +65,7 @@ class Model:
                        'min_samples_leaf': min_samples_leaf,
                        'bootstrap': bootstrap}
 
-        rf: RandomForestRegressor = RandomForestRegressor()
+        rf: RandomForestRegressor = RandomForestRegressor(random_state=self.seed)
 
         # Random search of parameters, using 3 fold cross validation,
         # search across 100 different combinations, and use all available cores
@@ -76,6 +76,15 @@ class Model:
         self.reg.fit(X_train, y_train)
         self.estimator = self.reg.best_estimator_
         return
+
+    def date_to_features(self, date: str):
+        dfi = self.state.load(country=self.country, datatype ='all', droptype=False)
+        feature_engineer: FeatureEngineer = FeatureEngineer(datatype='prod', log=self.log)
+        X_prod, y_prod, dates_prod = feature_engineer.run(dfi)
+        date = pd.to_datetime(date)
+        X_data = X_prod.loc[dates_prod == date, :]
+        return X_data
+
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
         """
@@ -92,7 +101,8 @@ class Model:
         """
         Cross validated RMSE
         """
-        cv_score = cross_val_score(self.estimator, X, y, cv=5, scoring=make_scorer(mean_squared_error))
+        cv = KFold(5, random_state=self.seed, shuffle=True) # for reduplication
+        cv_score = cross_val_score(self.estimator, X, y, cv=cv, scoring=make_scorer(mean_squared_error))
         cv_score = np.array([np.sqrt(s) for s in cv_score])
         cv_score_mean = cv_score.mean()
         cv_score_std = cv_score.std()
@@ -156,14 +166,14 @@ class ModelContainer:
         top_countries: List[Optional[str]] = np.array(list(table.index))[:N].tolist()
         return top_countries
 
-    def train(self, filename) -> Dict[str, Model]:
+    def train(self, filename, N: int = 10) -> Dict[str, Model]:
         """
         Train over the top 15 countries
         """
         # absolute path of filename
         filename = os.path.join(self.model_datadir, filename)
         # get top countries to iterate over
-        top_countries: List[Optional[str]] = self._get_top_countries()
+        top_countries: List[Optional[str]] = self._get_top_countries(N=N)
 
         # delete shelf if it already exists
         if os.path.exists(filename):
@@ -191,7 +201,7 @@ class ModelContainer:
                 print(f"*** SAVED {key} ***")
         return self.models
 
-    def load(self, filename: str) -> Dict[str, Model]:
+    def load(self, filename: str, N: int = 10) -> Dict[str, Model]:
         """
         Load models into memory.
         """
@@ -199,8 +209,7 @@ class ModelContainer:
         print(self.model_datadir)
         filename = os.path.join(self.model_datadir, filename)
         with shelve.open(filename) as db:
-            keylist: List[str] = [f.split('.')[0] for f in os.listdir(self.ts_datadir) if
-                         os.path.isfile(os.path.join(self.ts_datadir, f))]
+            keylist: List[str] = self._get_top_countries(N=N)
             self.models: Dict[str, Model] = {}
             for key in keylist:
                 save_container = db[key]
@@ -223,3 +232,9 @@ class ModelContainer:
             print(f"{country} RMSE: {rmse:.2f} +/- {rmse_std:.2f}")
             scores[country] = rmse
         return scores
+
+    def predict(self, country: Optional[str], date: str):
+        model: Model = self.models[country]
+        X = model.date_to_features(date)
+        r_pred = model.predict(X)
+        return r_pred

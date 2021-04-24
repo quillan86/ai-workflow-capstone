@@ -1,9 +1,9 @@
 # Project specific
-app/data/ts-data/
-app/models/*
+src/app/data/ts-data/
+src/app/models/*
 
 # preserve project specific folders
-!app/models/.keep
+!src/app/models/.keep
 
 # etc
 .DS_Store
