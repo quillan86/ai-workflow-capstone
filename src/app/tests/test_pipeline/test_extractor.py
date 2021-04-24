@@ -2,13 +2,13 @@ from unittest import TestCase
 import os
 from typing import List, Set
 import pandas as pd
-from ..pipeline.etl import Extractor
+from src.app.pipeline.etl import Extractor
 
 
 class ExtractorTestCase(TestCase):
 
     def setUp(self):
-        self.datadir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
+        self.datadir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..', 'data'))
         self.train_datadir = os.path.join(self.datadir, "cs-train")
 
         # things

@@ -2,12 +2,12 @@ import os
 import pandas as pd
 from unittest import TestCase
 
-from ..pipeline.state import State
+from src.app.pipeline.state import State
 
 class StateTestCase(TestCase):
 
     def setUp(self):
-        self.datadir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
+        self.datadir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..', 'data'))
         self.train_datadir = os.path.join(self.datadir, "cs-train")
         self.prod_datadir = os.path.join(self.datadir, "cs-production")
         self.ts_datadir: str = os.path.join(self.datadir, 'ts-data')

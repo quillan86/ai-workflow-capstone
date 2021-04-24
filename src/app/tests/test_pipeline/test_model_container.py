@@ -2,12 +2,12 @@ from unittest import TestCase
 import os
 import numpy as np
 from typing import List, Dict
-from ..pipeline.model import ModelContainer
+from src.app.pipeline.model import ModelContainer
 
 class ModelContainerTestCase(TestCase):
 
     def setUp(self):
-        self.datadir: str = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
+        self.datadir: str = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..', 'data'))
         self.log: bool = False
         self.filename: str = "initial_model.db"
 

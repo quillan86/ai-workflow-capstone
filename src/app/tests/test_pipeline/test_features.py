@@ -2,13 +2,13 @@ from unittest import TestCase
 import os
 import pandas as pd
 from typing import List
-from ..pipeline.features import FeatureEngineer
-from ..pipeline.state import State
+from src.app.pipeline.features import FeatureEngineer
+from src.app.pipeline.state import State
 
 class FeatureEngineerTestCase(TestCase):
 
     def setUp(self):
-        self.datadir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
+        self.datadir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..', 'data'))
         self.log: bool = False
         self.uk: str = 'united kingdom'
 
