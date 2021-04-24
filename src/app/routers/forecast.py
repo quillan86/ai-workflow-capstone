@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from typing import List, Optional, Dict
 
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/model",
 
 
 # ---------------------------------------------------------------------------------------
-# EXTRACT MODEL
+# FORECAST MODEL
 # ---------------------------------------------------------------------------------------
 @router.post("/train/", tags=["v1"])
 async def train(name: str):
@@ -41,8 +42,8 @@ async def forecast_date(name: str, country: Optional[str], date: str):
 
 @router.get("/forecast_range/", tags=["v1"], response_model=ForecastRangeOutput)
 async def forecast_range(name: str, country: Optional[str], initial_date: str, final_date: str):
-    name = '.'.join(name.split('.')[:-1] if len(name.split('.')) > 1 else name.split('.')) + '.db'
-    y_pred = predict_range(name, country, initial_date, final_date)
+    name: str = '.'.join(name.split('.')[:-1] if len(name.split('.')) > 1 else name.split('.')) + '.db'
+    y_pred: np.ndarray = predict_range(name, country, initial_date, final_date)
     initial_dates = pd.date_range(initial_date, final_date).astype(str).tolist()
     final_dates = pd.date_range(pd.to_datetime(initial_date) + pd.DateOffset(days=30), pd.to_datetime(final_date) + pd.DateOffset(days=30)).astype(str).tolist()
     revenue = [float(y) for y in y_pred]
