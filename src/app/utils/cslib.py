@@ -78,7 +78,7 @@ def convert_to_ts(df_orig, country=None):
 
     if country:
         if country not in np.unique(df_orig['country'].values):
-            raise Excpetion("country not found")
+            raise Exception("country not found")
     
         mask = df_orig['country'] == country
         df = df_orig[mask]
