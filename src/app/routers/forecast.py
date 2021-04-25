@@ -24,10 +24,10 @@ async def train(name: str):
 
 
 @router.get("/train/", tags=["v1"], response_model=Dict[str, float])
-async def score(name: str):
+async def score(name: str, cv: bool):
     name = '.'.join(name.split('.')[:-1] if len(name.split('.')) > 1 else name.split('.')) + '.db'
     model_container = load(name, log=False)
-    scores: Dict[str, float] = model_container.score()
+    scores: Dict[str, float] = model_container.score(crossval=cv)
     return scores
 
 

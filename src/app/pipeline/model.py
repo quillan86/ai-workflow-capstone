@@ -273,7 +273,7 @@ class ModelContainer:
                 self.models[key] = model
         return self.models
 
-    def score(self) -> Dict[str, float]:
+    def score(self, crossval: bool = True) -> Dict[str, float]:
         """
         Obtain training scores for model.
         """
@@ -283,8 +283,11 @@ class ModelContainer:
             # load model data
             X_train, y_train, dates_train = model.load_train_data()
             del dates_train # not needed
-            rmse, rmse_std = model.score(X_train, y_train)
-            print(f"{country} RMSE: {rmse:.2f} +/- {rmse_std:.2f}")
+            rmse, rmse_std = model.score(X_train, y_train, crossval=crossval)
+            if crossval:
+                print(f"{country} RMSE: {rmse:.2f} +/- {rmse_std:.2f}")
+            else:
+                print(f"{country} RMSE: {rmse:.2f}")
             scores[country] = rmse
         return scores
 
