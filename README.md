@@ -4,6 +4,8 @@ This is the Capstone Project for Revenue Forecasting for AAVAIL by Bill Dusch. T
 
 To run the API, you can either run `run_app.py` locally or dockerize an image of the service using the Dockerfile contained in the service.
 
+This project has been created using FastAPI rather than Flask.
+
 The documentation of the api, runs run locally, is stored at `http://localhost:80/api/docs`. There are five endpoints:
 
 - `POST /api/vi/model/train/`: train a series of models.
