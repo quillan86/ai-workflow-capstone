@@ -13,3 +13,9 @@ class ForecastRangeOutput(BaseModel):
     initial_dates: List[str]
     forecasted_dates: List[str]
     forecasted_revenue: List[float]
+
+
+class MonitorOutput(BaseModel):
+    outlier_X: float
+    wasserstein_X: float
+    wasserstein_y: float

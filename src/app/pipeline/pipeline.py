@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 from .model import ModelContainer
+from .monitoring import Monitor
 from typing import Optional, Union
 
 pipelinepath: str = os.path.dirname(os.path.abspath(__file__))
@@ -29,6 +30,11 @@ def predict_range(filename: str, country: Optional[str], initial_date: str, fina
     model_container = load(filename)
     y_pred = model_container.predict_range(country, initial_date, final_date)
     return y_pred
+
+def monitor_country(filename: str, country: Optional[str], log: bool = False):
+    monitor = Monitor(filename, log = log)
+    result = monitor.detect_model(country)
+    return result
 
 
 if __name__ == "__main__":

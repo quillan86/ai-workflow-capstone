@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 from typing import List, Optional, Dict
 
-from ..schemas import ForecastDateOutput, ForecastRangeOutput
+from ..schemas import ForecastDateOutput, ForecastRangeOutput, MonitorOutput
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..pipeline.pipeline import train, load, predict_date, predict_range
+from ..pipeline.pipeline import train, load, predict_date, predict_range, monitor_country
 
 router = APIRouter(prefix="/model",
                    responses={404: {"description": "Not found"}}
@@ -51,3 +51,16 @@ async def forecast_range(name: str, country: Optional[str], initial_date: str, f
     revenue = [float(y) for y in y_pred]
     return {"country": country, "initial_dates": initial_dates, 'forecasted_dates': final_dates, 'forecasted_revenue': revenue}
 
+
+@router.get("/monitor/", tags=["v1"], response_model=MonitorOutput)
+async def monitor(name: str, country: Optional[str]):
+    name: str = '.'.join(name.split('.')[:-1] if len(name.split('.')) > 1 else name.split('.')) + '.db'
+    result = monitor_country(name, country, log=False)
+
+    result = {
+        'outlier_X': result['outlier_X'],
+        'wasserstein_X': result['wasserstein_X'],
+        'wasserstein_y': result['wasserstein_y']
+    }
+
+    return result
