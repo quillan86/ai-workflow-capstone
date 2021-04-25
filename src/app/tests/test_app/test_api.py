@@ -85,7 +85,7 @@ class TestAPISingleton(APITestCase):
     def test_scores(self):
         model = "initial_model"
         response = self.client.get(f"api/v1/model/train/?name={model}")
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         result = response.json()
 
         for key in self.score_result.keys():
@@ -96,7 +96,7 @@ class TestAPISingleton(APITestCase):
         country: str = "all_countries"
         date: str = "2019-10-10"
         response = self.client.get(f"api/v1/model/forecast_date/?name={model}&country={country}&date={date}")
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         result = response.json()
 
         for key in self.predict_date_result.keys():
@@ -113,7 +113,7 @@ class TestAPISingleton(APITestCase):
 
         response = self.client.get(f"api/v1/model/forecast_range/?name={model}&country={country}&initial_date={initial_date}&final_date={final_date}")
 
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         result = response.json()
 
         for key in self.forecasted_range_results.keys():

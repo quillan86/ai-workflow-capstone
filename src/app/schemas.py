@@ -1,14 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel
 
-class TrainingParameters(BaseModel):
-    pass
-
-
-class PredictionParameters(BaseModel):
-    pass
-
-
 class ForecastDateOutput(BaseModel):
     country: Optional[str]
     initial_date: str

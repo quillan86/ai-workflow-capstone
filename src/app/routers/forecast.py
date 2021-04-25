@@ -13,7 +13,6 @@ router = APIRouter(prefix="/model",
                    )
 
 
-
 # ---------------------------------------------------------------------------------------
 # FORECAST MODEL
 # ---------------------------------------------------------------------------------------
@@ -23,12 +22,14 @@ async def train(name: str):
     model_container = train(name, log=False)
     return {"message": f"model {name} trained"}
 
+
 @router.get("/train/", tags=["v1"], response_model=Dict[str, float])
 async def score(name: str):
     name = '.'.join(name.split('.')[:-1] if len(name.split('.')) > 1 else name.split('.')) + '.db'
     model_container = load(name, log=False)
     scores: Dict[str, float] = model_container.score()
     return scores
+
 
 @router.get("/forecast_date/", tags=["v1"], response_model=ForecastDateOutput)
 async def forecast_date(name: str, country: Optional[str], date: str):
@@ -39,6 +40,7 @@ async def forecast_date(name: str, country: Optional[str], date: str):
     initial_date: str = pd.to_datetime(date).strftime('%Y-%m-%d')
     forecasted_date: str = forecasted_date.strftime('%Y-%m-%d')
     return {"country": country, "initial_date": initial_date, "forecasted_date": forecasted_date, "forecasted_revenue": revenue}
+
 
 @router.get("/forecast_range/", tags=["v1"], response_model=ForecastRangeOutput)
 async def forecast_range(name: str, country: Optional[str], initial_date: str, final_date: str):
