@@ -1,4 +1,21 @@
-# IBM AI Enterprise Workflow Capstone
+# IBM AI Enterprise Workflow Capstone - Bill Dussch
+
+This is the Capstone Project for Revenue Forecasting for AAVAIL by Bill Dusch. The result is a microservice dockerized into a FastAPI.
+
+To run the API, you can either run `run_app.py` locally or dockerize an image of the service using the Dockerfile contained in the service.
+
+The documentation of the api, runs run locally, is stored at `http://localhost:80/api/docs`. There are five endpoints:
+
+- `POST /api/vi/model/train/`: train a series of models.
+- `GET /api/v1/model/train/`: run performance metrics on a trained model.
+- `GET /api/v1/model/forecast_date/`: Forecast revenue 30 days past a chosen date given a trained model.
+- `GET /api/v1/model/forecast_range/`: Forecast revenue for a range of dates 30 days past a chosen date range given a trained model.
+- `GET /api/v1/model/monitor/`: Run monitoring performance metrics given current training data.
+
+The ultimate model chosen was a Random Forest Regressor model (cross validated for hyperparamter selection) on a number of historical features (previous [7, 14, 28, 70] days of the [unique_invoices, unique_streams, purchases, total_views, revenue]) to predict the total revenue 30 days after the chosen target date. There are models for the top 10 countries in total revenue as well as the total revenue for all countries (`all_countries` when selecting a model by country). The pretrained model is named `initial_model.db`, stored as a python `shelf` object (dictionary of pickled models, essentially).
+
+
+---
 Files for the IBM AI Enterprise Workflow Capstone project. 
 
 ## Part 1
