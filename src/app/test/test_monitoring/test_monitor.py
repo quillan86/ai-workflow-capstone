@@ -27,7 +27,7 @@ class MonitorTestCase(TestCase):
 
 
     def tearDown(self):
-        pass
+        del self.monitor
 
 
 class TestMonitorSingleton(MonitorTestCase):
