@@ -1,6 +1,7 @@
 import os
 import shelve
 import pickle
+import time
 from typing import Optional, Union, List, Tuple, Dict
 import numpy as np
 import pandas as pd
@@ -10,6 +11,10 @@ from sklearn.metrics import mean_squared_error, make_scorer
 
 from .state import State
 from .features import FeatureEngineer
+from .logging import Logger
+
+MODEL_VERSION: str = "0.5.0"
+MODEL_VERSION_NOTE: str = "Cross-Validated Random Forest on AAVAIL Revenue Forecasting"
 
 
 class Model:
@@ -22,6 +27,7 @@ class Model:
         self.log: bool = log
         self.state: State = State(datadir)
         self.seed: int = seed
+        self.logger = Logger()
 
         # model initializations
         self.reg: Optional[RandomizedSearchCV] = None # model inside random CV
@@ -46,6 +52,10 @@ class Model:
         X_train: Features to train over
         y_train: target to train over (revenue or log revenue)
         """
+
+        ## start timer for runtime
+        time_start = time.time()
+
         # Hyperparameter optimization
 
         # Number of trees in random forest
@@ -79,6 +89,19 @@ class Model:
         # Fit the random search model
         self.reg.fit(X_train, y_train)
         self.estimator = self.reg.best_estimator_
+
+        # get runtime
+        m, s = divmod(time.time() - time_start, 60)
+        h, m = divmod(m, 60)
+        runtime = "%03d:%02d:%02d" % (h, m, s)
+
+        # get mass evaluation
+        y_pred = self.estimator.predict(X_train)
+        eval_test = np.sqrt(mean_squared_error(y_train, y_pred))
+
+        # log results
+        self.logger.update_train_log(X_train.shape, eval_test, runtime, self.country, MODEL_VERSION, MODEL_VERSION_NOTE, test=False)
+
         return
 
     def date_to_features(self, date: str):
@@ -98,22 +121,46 @@ class Model:
         """
         Predict revenue. If data is trained on log of data, convert back to revenue.
         """
+
+        ## start timer for runtime
+        time_start = time.time()
+
         y_pred: np.ndarray = self.reg.predict(X)
         if self.log:
             r_pred: np.ndarray = np.exp(y_pred)
         else:
             r_pred: np.ndarray = y_pred
+
+        y_proba = 'None'
+        # get time
+        m, s = divmod(time.time() - time_start, 60)
+        h, m = divmod(m, 60)
+        runtime = "%03d:%02d:%02d" % (h, m, s)
+
+        for i in range(X.shape[0]):
+            if isinstance(X, pd.DataFrame):
+                query = X.iloc[i].values.tolist()
+            else:
+                query = X[i, :].tolist()
+            self.logger.update_predict_log(y_pred[i], y_proba, query,
+                                           runtime, self.country, MODEL_VERSION, test=False)
+
         return r_pred
 
-    def score(self, X: Union[pd.DataFrame, np.ndarray], y: np.ndarray) -> Tuple[float, float]:
+    def score(self, X: Union[pd.DataFrame, np.ndarray], y: np.ndarray, crossval: bool = True) -> Tuple[float, float]:
         """
         Cross validated RMSE
         """
-        cv = KFold(5, random_state=self.seed, shuffle=True) # for reduplication
-        cv_score = cross_val_score(self.estimator, X, y, cv=cv, scoring=make_scorer(mean_squared_error))
-        cv_score = np.array([np.sqrt(s) for s in cv_score])
-        cv_score_mean = cv_score.mean()
-        cv_score_std = cv_score.std()
+        if crossval:
+            cv = KFold(5, random_state=self.seed, shuffle=True) # for reduplication
+            cv_score = cross_val_score(self.estimator, X, y, cv=cv, scoring=make_scorer(mean_squared_error))
+            cv_score = np.array([np.sqrt(s) for s in cv_score])
+            cv_score_mean = cv_score.mean()
+            cv_score_std = cv_score.std()
+        else:
+            y_pred = self.estimator.predict(X)
+            cv_score_mean = np.sqrt(mean_squared_error(y, y_pred))
+            cv_score_std = 0.0
         return cv_score_mean, cv_score_std
 
     def save_object(self) -> Dict[str, Union[str, int, RandomForestRegressor, RandomizedSearchCV, None]]:
