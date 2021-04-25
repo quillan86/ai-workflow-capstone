@@ -6,7 +6,7 @@ To run the API, you can either run `run_app.py` locally or dockerize an image of
 
 This project has been created using FastAPI rather than Flask.
 
-The documentation of the api, runs run locally, is stored at `http://localhost:80/api/docs`. There are five endpoints:
+The documentation of the api, runs run locally, is stored at `http://0.0.0.0:80/api/docs`. There are five endpoints:
 
 - `POST /api/vi/model/train/`: train a series of models.
 - `GET /api/v1/model/train/`: run performance metrics on a trained model.
@@ -15,6 +15,33 @@ The documentation of the api, runs run locally, is stored at `http://localhost:8
 - `GET /api/v1/model/monitor/`: Run monitoring performance metrics given current training data.
 
 The ultimate model chosen was a Random Forest Regressor model (cross validated for hyperparamter selection) on a number of historical features (previous [7, 14, 28, 70] days of the [unique_invoices, unique_streams, purchases, total_views, revenue]) to predict the total revenue 30 days after the chosen target date. There are models for the top 10 countries in total revenue as well as the total revenue for all countries (`all_countries` when selecting a model by country). The pretrained model is named `initial_model.db`, stored as a python `shelf` object (dictionary of pickled models, essentially).
+
+## Running Microservice
+
+- Build the docker image and run it.
+
+```
+> cd ai-workflow-capstone
+> docker build -t capstone_project .
+```
+
+- Check that the image is there.
+
+```
+> docker image ls
+```
+
+- run the container.
+```
+docker run -d --name capstoneproject -p 80:80 capstone-project
+```
+
+- Go to `http://0.0.0.0:80/api/docs` to find the documentation and test it. The endpoints are the ones talked about before, at e.g. ` `http://0.0.0.0:80/api/v1/model/forecast_date` etc.
+
+
+## File Location
+
+- Unit tests are stored in `src/app/tests`. You can run all the tests at `src/app/test_all.py`.
 
 
 ---
