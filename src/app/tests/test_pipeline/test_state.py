@@ -25,12 +25,13 @@ class TestStateSingleton(StateTestCase):
 
     def test_save(self):
         # save data
-        self.state.save(train_only=False)
+        N: int = 15
+        self.state.save(train_only=False, N=N)
 
         # look at data structure
         files = [os.path.join(self.ts_datadir, f) for f in os.listdir(self.ts_datadir) if os.path.isfile(os.path.join(self.ts_datadir, f))]
 
-        self.assertEqual(len(files), 15 + 1) # top 15 + all countries
+        self.assertEqual(len(files), N + 1) # top 15 + all countries
 
     def test_load_uk(self):
         # load data

@@ -217,7 +217,7 @@ class ModelContainer:
         print(self.model_datadir)
         filename = os.path.join(self.model_datadir, filename)
         with shelve.open(filename) as db:
-            keylist: List[str] = self._get_top_countries(N=N)
+            keylist: List[str] = list(db.keys())
             self.models: Dict[str, Model] = {}
             for key in keylist:
                 save_container = db[key]

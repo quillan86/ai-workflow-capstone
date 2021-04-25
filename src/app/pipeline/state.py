@@ -17,7 +17,7 @@ class State:
         self.train_fetcher = Extractor(self.train_datadir)
         self.prod_fetcher = Extractor(self.prod_datadir)
 
-    def save(self, train_only: bool = False) -> pd.DataFrame:
+    def save(self, train_only: bool = False, N: int = 15) -> pd.DataFrame:
 
         ts_datadir: str = os.path.join(self.datadir, 'ts-data')
 
@@ -34,7 +34,6 @@ class State:
         df = pd.concat([df_train, df_prod])
 
         ## find the top N countries (wrt revenue)
-        N: int = 15
         table = pd.pivot_table(df ,index='country', values="price", aggfunc='sum')
         table.columns = ['total_revenue']
         table.sort_values(by='total_revenue' ,inplace=True ,ascending=False)

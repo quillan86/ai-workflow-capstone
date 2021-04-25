@@ -23,7 +23,8 @@ class APITestCase(TestCase):
                 'singapore': 2060.404732578652
             }
 
-        self.predict_date_result = {"country": "all_countries",
+        self.predict_date_result = {
+                                     "country": "all_countries",
                                      "initial_date": "2019-10-10",
                                      "forecasted_date": "2019-11-09",
                                      "forecasted_revenue": 276604.0162401151
@@ -83,26 +84,26 @@ class TestAPISingleton(APITestCase):
 
     def test_scores(self):
         model = "initial_model"
-        response = self.client.get(f"/model/train/?name={model}")
+        response = self.client.get(f"api/v1/model/train/?name={model}")
         self.assertEquals(response.status_code, 200)
         result = response.json()
-        for key in self.score_result:
+
+        for key in self.score_result.keys():
             self.assertAlmostEqual(self.score_result[key], result[key])
 
     def test_predict_date(self):
         model: str = "initial_model"
         country: str = "all_countries"
         date: str = "2019-10-10"
-        forecast_date: str = "2019-11-09"
-        response = self.client.get(f"/model/forecast_date/?name={model}&country={country}&date={date}")
+        response = self.client.get(f"api/v1/model/forecast_date/?name={model}&country={country}&date={date}")
         self.assertEquals(response.status_code, 200)
         result = response.json()
 
-        for key in self.predict_date_result:
+        for key in self.predict_date_result.keys():
             if key == "forecasted_revenue":
-                self.assertAlmostEqual(self.score_result[key], result[key])
+                self.assertAlmostEqual(self.predict_date_result[key], result[key])
             else:
-                self.assertEqual(self.score_result[key], result[key])
+                self.assertEqual(self.predict_date_result[key], result[key])
 
     def test_predict_range(self):
         model: str = "initial_model"
@@ -110,16 +111,16 @@ class TestAPISingleton(APITestCase):
         initial_date: str = "2019-09-01"
         final_date: str = "2019-09-10"
 
-        response = self.client.get(f"/model/forecast_range/?name={model}&country={country}&initial_date={initial_date}&final_date={final_date}")
+        response = self.client.get(f"api/v1/model/forecast_range/?name={model}&country={country}&initial_date={initial_date}&final_date={final_date}")
 
         self.assertEquals(response.status_code, 200)
         result = response.json()
 
-        for key in self.predict_date_result:
+        for key in self.forecasted_range_results.keys():
             if key == "forecasted_revenue":
                 np.testing.assert_almost_equal(self.forecasted_range_results[key], result[key])
             elif key in ["initial_dates", "forecasted_dates"]:
                 for item1, item2 in zip(self.forecasted_range_results[key], result[key]):
                     self.assertEqual(item1, item2)
             else:
-                self.assertEqual(self.score_result[key], result[key])
+                self.assertEqual(self.forecasted_range_results[key], result[key])
