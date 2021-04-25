@@ -2,7 +2,7 @@
 import os
 import numpy as np
 import pandas as pd
-from typing import Union
+from typing import Union, Dict
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from sklearn.covariance import EllipticEnvelope
@@ -12,17 +12,17 @@ from .model import ModelContainer
 
 
 class Monitor:
-    def __init__(self, filename: str, log: bool = False):
+    def __init__(self, filename: str, log: bool = False, seed: int = 42):
         pipelinepath: str = os.path.dirname(os.path.abspath(__file__))
-        self.datadir = os.path.abspath(os.path.join(pipelinepath, '..', 'data'))
+        self.datadir: str = os.path.abspath(os.path.join(pipelinepath, '..', 'data'))
 
         self.filename: str = filename
-        self.model_container = ModelContainer(self.datadir, log=log)
+        self.model_container: ModelContainer = ModelContainer(self.datadir, log=log)
         self.model_container.load(filename)
-        self.seed: int = 42
+        self.seed: int = seed
 
 
-    def detect(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.Series]):
+    def detect(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.Series]) -> Dict[str, Union[float, np.ndarray]]:
         """
         determine outlier and distance thresholds
         return thresholds, outlier model(s) and source distributions for distances
@@ -35,8 +35,11 @@ class Monitor:
         if isinstance(y, pd.Series):
             y = y.values
 
+
+        contamination: float = 0.01
+
         xpipe = Pipeline(steps=[('pca', PCA(2, random_state=self.seed)),
-                                ('clf', EllipticEnvelope(random_state=self.seed, contamination=0.01))])
+                                ('clf', EllipticEnvelope(random_state=self.seed, contamination=contamination))])
         xpipe.fit(X)
 
         bs_samples: int = 1000
@@ -45,8 +48,11 @@ class Monitor:
         wasserstein_y: np.ndarray = np.zeros(bs_samples)
 
         for b in range(bs_samples):
+            # set random seed
+            rng = np.random.default_rng(self.seed + b)
+
             n_samples = int(np.round(0.80 * X.shape[0]))
-            subset_indices = np.random.choice(np.arange(X.shape[0]), n_samples, replace=True).astype(int)
+            subset_indices = rng.choice(np.arange(X.shape[0]), n_samples, replace=True).astype(int)
             y_bs = y[subset_indices]
             X_bs = X[subset_indices, :]
 
@@ -65,21 +71,21 @@ class Monitor:
         wasserstein_y.sort()
         wasserstein_y_threshold = wasserstein_y[int(0.975 * bs_samples)] + wasserstein_y[int(0.025 * bs_samples)]
 
-        result = {"outlier_X": np.round(outlier_X_threshold, 2),
-                     "wasserstein_X": np.round(wasserstein_X_threshold, 2),
-                     "wasserstein_y": np.round(wasserstein_y_threshold, 2),
-                     "latest_X": X,
-                     "latest_y": y}
+        result = {
+                    "outlier_X": np.round(outlier_X_threshold, 2),
+                    "wasserstein_X": np.round(wasserstein_X_threshold, 2),
+                    "wasserstein_y": np.round(wasserstein_y_threshold, 2)
+                  }
         return result
 
-    def detect_model(self, country: str):
+    def detect_model(self, country: str) -> Dict[str, Union[float, np.ndarray]]:
         model = self.model_container.models[country]
         X, y, dates = model.load_data(datatype='train')
-        result = self.detect(X, y)
+        result: Dict[str, Union[float, np.ndarray]] = self.detect(X, y)
         return result
 
-    def detect_all(self):
-        results = {}
+    def detect_all(self) -> Dict[str, dict]:
+        results: Dict[str, dict] = {}
         for key in self.model_container.models.keys():
             result = self.detect_model(key)
             results[key] = result
