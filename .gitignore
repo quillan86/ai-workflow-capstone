@@ -1,6 +1,6 @@
 # Project specific
-# src/app/data/ts-data/
-# src/app/models/*
+src/app/data/ts-data/
+src/app/models/*
 
 # preserve project specific folders
 !src/app/models/.keep
