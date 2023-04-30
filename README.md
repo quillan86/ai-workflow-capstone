@@ -14,7 +14,7 @@ The documentation of the api, runs run locally, is stored at `http://0.0.0.0:80/
 - `GET /api/v1/model/forecast_range/`: Forecast revenue for a range of dates 30 days past a chosen date range given a trained model.
 - `GET /api/v1/model/monitor/`: Run monitoring performance metrics given current training data.
 
-The ultimate model chosen was a Random Forest Regressor model (cross validated for hyperparamter selection) on a number of historical features (previous [7, 14, 28, 70] days of the [unique_invoices, unique_streams, purchases, total_views, revenue]) to predict the total revenue 30 days after the chosen target date. There are models for the top 10 countries in total revenue as well as the total revenue for all countries (`all_countries` when selecting a model by country). The pretrained model is named `initial_model.db`, stored as a python `shelf` object (dictionary of pickled models, essentially).
+The ultimate model chosen was a Random Forest Regressor model (cross validated for hyperparameter selection) on a number of historical features (previous [7, 14, 28, 70] days of the [unique_invoices, unique_streams, purchases, total_views, revenue]) to predict the total revenue 30 days after the chosen target date. There are models for the top 10 countries in total revenue as well as the total revenue for all countries (`all_countries` when selecting a model by country). The pretrained model is named `initial_model.db`, stored as a python `shelf` object (dictionary of pickled models, essentially).
 
 ## Running Microservice
 
